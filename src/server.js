@@ -17,7 +17,23 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: "https://grupo3b.vercel.app"
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      "https://grupo3b.vercel.app",
+      "http://188.245.186.232",
+      "http://188.245.186.232:4000",
+      "http://localhost",
+      "http://localhost:4000"
+    ];
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS bloqueado: " + origin));
+    }
+  }
 }));
 
 app.use(express.json());
@@ -31,23 +47,15 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/stock", stockRoutes);
 app.use("/api/stock-requests", stockRequestRoutes);
 
-// Ruta de prueba
 app.get("/", (req, res) => {
   res.json({ ok: true, message: "Servidor backend funcionando" });
 });
 
-// ⚠️ PORT OBLIGATORIO
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 4000;
 
-if (!PORT) {
-  throw new Error("PORT no definido (Railway)");
-}
-
-// ⚠️ ESCUCHAR EN 0.0.0.0
 app.listen(PORT, "0.0.0.0", async () => {
   console.log(`Servidor escuchando en puerto ${PORT}`);
 
-  // Conectar DB DESPUÉS de levantar el server
   try {
     await connectDB();
     console.log("MongoDB conectado");
